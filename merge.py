@@ -87,9 +87,6 @@ def days_from_epoch(year, month, day):
 # Connect a weather db column to 
 def connect(row, w_col):
     if row.iyear >= 2012:  # Weather data starts at 2012.
-        if row.iyear == 2017:
-            if row.imonth > 6:  # Only check the first six months of 2017.
-                return None
         epoch_time = days_from_epoch(row.iyear, row.imonth, row.iday)
         lat_index = t_lat_to_w_lat_index(row.latitude)
         lon_index = t_lon_to_w_lon_index(row.longitude)
