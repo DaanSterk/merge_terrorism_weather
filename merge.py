@@ -47,6 +47,38 @@ data_columns = [
 t_set = t_set[t_set.iyear >= 2012]
 t_set = t_set.loc[:, data_columns] # Only keep described columns.
 
+# Random acts of violence and other outliers should not be part of the data.
+# Thus, restrict the set the only attacks where the terrorism motive is certain.
+t_set = t_set[(t_set.crit1 == 1) & (t_set.crit2 == 1) & (t_set.crit3 == 1) & (t_set.doubtterr == 0)]
+
+# Weapontype column contains very long name for vehicle property -> shorten.
+t_set.weaptype1_txt.replace(
+    'Vehicle (not to include vehicle-borne explosives, i.e., car or truck bombs)',
+    'Vehicle', inplace = True)
+
+# Replace -9 (unknown) values with 0 (no). -9 values are much more likely to be false than true.
+t_set.iloc[:,[6, 15, 16, 17]] = t_set.iloc[:,[6, 15, 16, 17]].replace(-9,0)
+
+# Some values in the claimed category are 2 (should be 0 or 1).
+# Assume these were input mistakes and set 2 to 1.
+t_set.claimed.replace(2,1, inplace = True)
+
+# Ensure consistent values and make everything lowercase.
+t_set.target1 = t_set.target1.str.lower()
+t_set.gname = t_set.gname.str.lower()
+t_set.summary = t_set.summary.str.lower()
+t_set.target1 = t_set.target1.fillna('unknown').replace('unk','unknown')
+
+# Some nwound and nkill are NaN. Replace them with median.
+t_set.nkill = np.round(t_set.nkill.fillna(t_set.nkill.median())).astype(int)
+t_set.nwound = np.round(t_set.nwound.fillna(t_set.nwound.median())).astype(int)
+
+# Database only reports victims as nkill and nwound. Combine these into ncasualties column.
+# Also add has_casualties column.
+t_set['ncasualties'] = t_set['nkill'] + t_set['nwound']
+t_set['has_casualties'] = t_set['ncasualties'].apply(lambda x: 0 if x == 0 else 1)
+
+
 # Weather dataset
 w_set = Dataset('w_db_part.nc')
 print("Data loaded")
