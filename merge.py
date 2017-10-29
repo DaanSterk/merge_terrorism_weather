@@ -6,6 +6,47 @@ from datetime import datetime
 # Terrorism dataset
 t_set = pd.read_csv('globalterrorismdb_0617dist.csv', encoding='ISO-8859-1')
 
+data_columns = [
+
+    # ===== Spatio-Temporal Variables =====
+    # The names of these variables speak for themselves;
+    # where in time and space was the act of terrorism committed?
+    'iyear', 'imonth', 'iday', 'latitude', 'longitude',
+
+    # ===== Binary Variables (1 -> yes or 0 -> no) =====
+    'extended',  # Did the duration of the incident extend 24 hours?
+    'vicinity',  # Did the incident occur in the immediate vicinity of the city? Is 0 for IN city.
+    'crit1', 'crit2', 'crit3',  # The incident meets the criterion (1, 2, 3), described in the introduction.
+    'doubtterr',  # Is there doubt to wether the attack is an act of terrorism?
+    'multiple',  # Is this incident connected to other incident(s)? !! Consistently available since 1997 !!
+    'success',  # Has the attack reached its goal? Depends on type of attack.
+    'suicide',  # Did the perpetrator intend to escape alive?
+    'claimed',  # Was the attack claimed by an organised group?
+    'property',  # Is there evidence of property damage from the incident?
+    'ishostkid',  # Were there victims taken hostage or kidnapped?
+
+    # ===== Continuous Variables =====
+    'nkill',  # Amount of confirmed kills.
+    'nwound',  # Amount of confirmed wounded.
+
+    # ===== Categorical variables (textual) =====
+    'country_txt',  # Name of country.
+    'region_txt',  # Name of region.
+    'attacktype1_txt',  # Of what type was the attack? I.e. assassination, bombing or kidnapping.
+    'targtype1_txt',  # What target did the attack have? I.e. business, government or police.
+    'natlty1_txt',  # Nationality of the target.
+    'weaptype1_txt',  # What weapon was used?
+
+    # ===== Descriptive Variables =====
+    'target1',  # Description of specific target, if applicable.
+    'gname',  # Name of the organized group, if applicable.
+    'summary',  # Summary of the attack.
+
+]
+
+t_set = t_set[t_set.iyear >= 2012]
+t_set = t_set.loc[:, data_columns] # Only keep described columns.
+
 # Weather dataset
 w_set = Dataset('w_db_part.nc')
 print("Data loaded")
@@ -45,9 +86,9 @@ def days_from_epoch(year, month, day):
 
 # Connect a weather db column to 
 def connect(row, w_col):
-    if row.iyear > 2012:  # Weather data starts at 2012.
+    if row.iyear >= 2012:  # Weather data starts at 2012.
         if row.iyear == 2017:
-            if row.imonth > 6:  # Only check the first 7 months of 2017.
+            if row.imonth > 6:  # Only check the first six months of 2017.
                 return None
         epoch_time = days_from_epoch(row.iyear, row.imonth, row.iday)
         lat_index = t_lat_to_w_lat_index(row.latitude)
@@ -66,5 +107,5 @@ print("sp merged")
 t_set['v10'] = t_set.apply(lambda row: connect(row, w_v10), axis=1)
 print("v10 merged")
 
-t_set.to_csv("terrorist_weather_jan2012_jul2017.csv")
+t_set.to_csv("terrorist_weather_jan2012_jul2017.csv", index=False)
 print("File write complete.")
